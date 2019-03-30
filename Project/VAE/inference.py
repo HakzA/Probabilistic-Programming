@@ -1,5 +1,5 @@
 import os
-from VAE import VAE
+from VAE_ import VAE
 from pyro.optim import Adam
 from pyro.infer import SVI, Trace_ELBO
 from trainEval import train, evaluate

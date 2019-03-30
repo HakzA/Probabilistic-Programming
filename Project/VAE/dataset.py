@@ -7,7 +7,7 @@ from IPython.core.debugger import set_trace
 import torch.nn as nn
 
 class ProteinDataset (Dataset):
-    """ Protein dataset."""
+    """ Protein Dataset."""
 
     # Initialize your data, download, etc.
     def __init__(self):
