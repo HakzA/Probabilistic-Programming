@@ -29,8 +29,8 @@ def getData(base_path, fn):
             phi = float(txt[2])
             # Store the psi-angle
             psi = float(txt[3])
-            # Combine the angles in a tuple
-            angle = (phi, psi)
+            # Combine the angles in a tuple, and add pi to them, so they are in [0, 2pi]
+            angle = (phi + np.pi, psi + np.pi)
             # Append that tuple onto the data array
             data.append(angle)
 
@@ -39,7 +39,7 @@ def getData(base_path, fn):
 
     # Shuffle dataset so avoid bias
     # (don't know if we need this, since we don't compute for sequences like TorusDMM)
-    shuffle(data)
+    # shuffle(data)
 
     # We want to split our dataset into two datasets:
     # Train dataset: used for training (70% of the data)

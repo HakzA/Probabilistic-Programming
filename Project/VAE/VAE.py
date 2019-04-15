@@ -15,6 +15,8 @@ from utils.mnist_cached import MNISTCached as MNIST
 from top500 import setup_data_loaders
 from utils.vae_plots import mnist_test_tsne, plot_llk, plot_vae_samples
 import vonMises
+#np.set_printoptions(threshold=np.inf)
+
 
 # define the PyTorch module that parameterizes the
 # diagonal gaussian distribution q(z|x)
@@ -29,6 +31,7 @@ class Encoder(nn.Module):
         self.softplus = nn.Softplus()
 
     def forward(self, x):
+        #set_trace()
         # define the forward computation on the angle-pair x
         # first shape the mini-batch to have angles in the rightmost dimension
         # TODO: Experiment with the shape. What shape does x have by default?
@@ -39,7 +42,8 @@ class Encoder(nn.Module):
         # return a mean vector and a positive covariance
         mean = self.fc21(hidden)
         cvariance = torch.exp(self.fc22(hidden))
-
+        #print("Encoder")
+        #set_trace()
         return mean, cvariance
 
 # define the PyTorch module that parameterizes the
@@ -63,6 +67,8 @@ class Decoder(nn.Module):
         # TODO: play around with the mean and kappa. Perhaps use ReLu like the TorusDMM.
         mean = torch.sigmoid(self.fc21(hidden))*2*np.pi
         kappa = torch.sigmoid(self.fc22(hidden))*90 + 10
+        #print("Decoder")
+        #set_trace()
         return mean, kappa
 
 
@@ -90,16 +96,21 @@ class VAE(nn.Module):
         # register PyTorch module 'decoder' with Pyro
         pyro.module('decoder', self.decoder)
         with pyro.plate('data', x.shape[0]):
+            #print("Model")
+            #set_trace()
             # setup hyperparameters for prior p(z)
             mean = x.new_zeros(torch.Size((x.shape[0], self.z_dim)))
             cvariance = x.new_ones(torch.Size((x.shape[0], self.z_dim)))
+            #set_trace()
             # sample from prior (value will be sampled by guide when computing ELBO)
             z = pyro.sample('latent', dist.Normal(mean, cvariance).to_event(1))
             # decode the latent z
             mean, kappa = self.decoder.forward(z)
             # TODO: play around with the reshape
             pyro.sample('obs', vonMises.VonMises(mean, kappa).to_event(1), obs=x.reshape(-1, 2))
-
+            #set_trace()
+            #print("Model")
+            #set_trace()
             return mean, kappa
 
     # define the guide (i.e. variational distribution) q(z|x)
@@ -107,10 +118,16 @@ class VAE(nn.Module):
         # register PyTorch module `encoder` with Pyro
         pyro.module("encoder", self.encoder)
         with pyro.plate("data", x.shape[0]):
+            #print("Guide")
+            #set_trace()
             # use the encoder to get the parameters used to define q(z|x)
             mean, cvariance = self.encoder.forward(x)
+            #set_trace()
             # sample the latent z
-            pyro.sample("latent", dist.Normal(mean, cvariance).to_event(1))
+            test = pyro.sample("latent", dist.Normal(mean, cvariance).to_event(1))
+            #print("Guide")
+            #set_trace()
+
 
 
     # define a helper function for reconstructing ramachandran plot
@@ -133,10 +150,11 @@ def main(args):
     # setup Protein data loaders
     # train_loader, test_loader
     train_loader, test_loader = setup_data_loaders(batch_size=256, use_cuda=args.cuda)
+    #ramaPlot.plot_loader(test_loader)
 
     # setup the VAE
     vae = VAE(use_cuda=args.cuda)
-
+    #set_trace()
     # setup optimizer
     adam_args = {"lr": args.learning_rate}
     optimizer = Adam(adam_args)
@@ -168,6 +186,7 @@ def main(args):
                 x = x.float()
                 x = x.cuda()
             # do ELBO gradient and accumulate los
+            #set_trace()
             epoch_loss += svi.step(x)
 
         # report training diagnostics
@@ -180,6 +199,7 @@ def main(args):
             # initialize loss accumulator
             test_loss = 0.
             for i, x in enumerate(test_loader):
+                #set_trace()
                 # float() needed because it is currently double on that gives error
                 # plus double datatype is considerably slower on GPU
                 x = x.float()
@@ -192,12 +212,14 @@ def main(args):
                 # pick three random test angles from the first mini-batch and
                 # visualize how well we're reconstructing them
                 if i == 0:
+                    #print("i = 0")
                     #ramaPlot.plot_vae_samples(vae,str(epoch))
-                    ramaPlot.make_plots(vae, train_elbo)
+                    ramaPlot.make_plots(train_elbo, train_loader, elbo, vae, x)
                     reco_indices = np.random.randint(0, x.shape[0], 3)
                     for index in reco_indices:
                         test_angle = x[index, :]
                         reco_angle = vae.reconstruct_plot(test_angle)
+                        #set_trace()
                     #set_trace()
                     #ramaPlot.plot(test_angle, str(epoch)+"test_angle")
                     #ramaPlot.plot(reco_angle, str(epoch)+"reconstructed_angle")

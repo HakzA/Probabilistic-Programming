@@ -7,6 +7,7 @@ import numpy as np
 from IPython.core.debugger import set_trace
 import vonMises
 from matplotlib import colors
+from pyro.infer import SVI, JitTrace_ELBO, Trace_ELBO, Importance, EmpiricalMarginal
 
 
 def plot(angles, epoch):
@@ -30,6 +31,13 @@ def plot_samples(angles, epoch):
     # plt.show(block=False)
     # or we can just save the image instead...
     plt.savefig('ramaPlot_epoch_'+epoch+'.png')
+
+def sample(vae, training_shape, num_samples=1):
+    posterior = Importance(vae.model, num_samples=num_samples)
+    #set_trace()
+    mask = torch.arange(training_shape.float().max()) < training_shape.dataset.data.tolist().float().unsqueeze(-1)
+    set_trace()
+
 
 def vae_samples(vae):
     x = torch.zeros([1, 2])
@@ -67,11 +75,25 @@ def vae_samples(vae):
     return np.array(output_angles), np.array(output_means), np.array(output_kappas)
 
 
+def plot_loader(dataloader):
+    phi_data = []
+    psi_data = []
+    n_bins = 60
+    axes = [[0, 2 * np.pi], [0, 2 * np.pi]]
+    for x in dataloader:
+        for angle in x:
+            phi_data.append(angle[0])
+            psi_data.append(angle[1])
+            #set_trace()
+    plt.hist2d(phi_data, psi_data, bins=n_bins, range=axes, norm=colors.LogNorm())
+    name_fn = "plot_loader"
+    plt.savefig(name_fn)
+
 
 # epoch_list: list of epoch loss (train_loss)
 # training_seq_lengths: data['train']['sequences']
 # elbo JitTrace_ELBO() if args.jit else Trace_ELBO()
-def make_plots(vae, train_elbo):
+def make_plots(train_elbo, train_loader, elbo, vae, x):
     # epoch number
     n_iter = len(train_elbo)
     x_train = np.array(range(len(train_elbo)))
@@ -83,8 +105,13 @@ def make_plots(vae, train_elbo):
     # A BUNCH OF PLOTTING AND SAVING
     #
     #
+    #z = Importance(vae.model, num_samples=1)
+    #set_trace()
     samples_angles, mean_angles, k_angles = vae_samples(vae)
+    #training_shape = torch.tensor(train_loader.dataset.data, dtype=torch.float)
+    #samples_angles, mean_angles, k_angles = sample(vae, training_shape)
 
+    #set_trace()
     s_phi = []
     s_psi = []
     m_phi = []
