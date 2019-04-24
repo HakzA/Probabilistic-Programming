@@ -39,7 +39,7 @@ def getData(base_path, fn):
 
     # Shuffle dataset so avoid bias
     # (don't know if we need this, since we don't compute for sequences like TorusDMM)
-    # shuffle(data)
+    shuffle(data)
 
     # We want to split our dataset into two datasets:
     # Train dataset: used for training (70% of the data)

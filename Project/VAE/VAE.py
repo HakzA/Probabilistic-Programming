@@ -133,12 +133,18 @@ class VAE(nn.Module):
     # define a helper function for reconstructing ramachandran plot
     def reconstruct_plot(self, x):
         # encode angles x
+        #set_trace()
         mean, cvariance = self.encoder(x)
         # sample in latent space
         z = dist.Normal(mean, cvariance).sample()
         # decode the plot (note we don't sample in angle space)
         mean, kappa = self.decoder(z)
-        return mean # , kappa
+        return mean, kappa
+
+    def sample_model(self):
+        z = dist.Normal(0, 1).sample()
+        mean, kappa = self.decoder(z)
+        return mean, kappa
 
     #def sample(selfself, svi, ):
 
@@ -150,7 +156,7 @@ def main(args):
     # setup Protein data loaders
     # train_loader, test_loader
     train_loader, test_loader = setup_data_loaders(batch_size=256, use_cuda=args.cuda)
-    #ramaPlot.plot_loader(test_loader)
+    ramaPlot.plot_loader(train_loader)
 
     # setup the VAE
     vae = VAE(use_cuda=args.cuda)
@@ -214,7 +220,8 @@ def main(args):
                 if i == 0:
                     #print("i = 0")
                     #ramaPlot.plot_vae_samples(vae,str(epoch))
-                    ramaPlot.make_plots(train_elbo, train_loader, elbo, vae, x)
+                    #ramaPlot.make_plots(train_elbo, train_loader, elbo, vae, x)
+                    ramaPlot.make_plots2(train_elbo, train_loader, elbo, vae)
                     reco_indices = np.random.randint(0, x.shape[0], 3)
                     for index in reco_indices:
                         test_angle = x[index, :]
